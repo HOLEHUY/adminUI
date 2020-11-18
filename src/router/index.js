@@ -14,6 +14,7 @@ import LayoutSimple from '@/layouts/variations/Simple.vue'
 // Register Vue Router
 Vue.use(Router)
 
+
 // Frontend: Landing
 const Landing = () => import("@/views/Landing.vue")
 
@@ -115,7 +116,6 @@ const PagesAuthAll = () => import("@/views/pages/auth/All.vue")
 const PagesErrorsAll = () => import("@/views/pages/errors/All.vue")
 
 // Pages: Auth
-const AuthSignIn = () => import(/* webpackChunkName: "auth-signin" */"@/views/pages/auth/SignIn.vue")
 const AuthSignIn2 = () => import(/* webpackChunkName: "auth-signin2" */"@/views/pages/auth/SignIn2.vue")
 const AuthSignUp = () => import(/* webpackChunkName: "auth-signup" */"@/views/pages/auth/SignUp.vue")
 const AuthSignUp2 = () => import(/* webpackChunkName: "auth-signup2" */"@/views/pages/auth/SignUp2.vue")
@@ -141,7 +141,7 @@ const BoxedImage1 = () => import("@/views/pages/boxed/Image1.vue")
 const BoxedImage2 = () => import("@/views/pages/boxed/Image2.vue")
 
 // Router Configuration
-export default new Router({
+const router = new Router({
   linkActiveClass: 'active',
   linkExactActiveClass: '',
   scrollBehavior () {
@@ -179,13 +179,8 @@ export default new Router({
       component: LayoutSimple,
       children: [
         {
-          path: 'signin',
-          name: 'Sign In',
-          component: AuthSignIn
-        },
-        {
-          path: 'signin2',
-          name: 'Sign In 2',
+          path: 'sign-in',
+          name: 'signIn',
           component: AuthSignIn2
         },
         {
@@ -741,5 +736,22 @@ export default new Router({
         }
       ]
     }
+    
   ]
 })
+
+import store from '@/store';
+
+
+router.beforeEach((to, from, next) => {
+  store.dispatch("setToken", localStorage.getItem("token"))
+  if(to.name === "signIn" && !store.state.token) return next()
+  if(!store.state.token) return router.push({name: "signIn"})
+  
+ 
+
+
+  next()
+})
+
+export default router

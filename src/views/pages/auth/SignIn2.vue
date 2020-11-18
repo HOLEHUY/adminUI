@@ -25,10 +25,10 @@
               <b-form @submit.stop.prevent="onSubmit">
                 <div class="py-3">
                   <div class="form-group">
-                    <b-form-input size="lg" class="form-control-alt" id="username" name="username" placeholder="Username" v-model="$v.form.username.$model" :state="!$v.form.username.$error && null" aria-describedby="username-feedback"></b-form-input>
+                    <b-form-input size="lg" class="form-control-alt" id="username" name="username" placeholder="Username" v-model.trim="$v.form.username.$model" :state="!$v.form.username.$error && null" aria-describedby="username-feedback"></b-form-input>
                   </div>
                   <div class="form-group">
-                    <b-form-input type="password" size="lg" class="form-control-alt" id="password" name="password" placeholder="Password" v-model="$v.form.password.$model" :state="!$v.form.password.$error && null" aria-describedby="password-feedback"></b-form-input>
+                    <b-form-input type="password" size="lg" class="form-control-alt" id="password" name="password" placeholder="Password" v-model.trim="$v.form.password.$model" :state="!$v.form.password.$error && null" aria-describedby="password-feedback"></b-form-input>
                   </div>
                   <div class="form-group">
                     <div class="d-md-flex align-items-md-center justify-content-md-between">
@@ -67,7 +67,8 @@
 <script>
 // Vuelidate, for more info and examples you can check out https://github.com/vuelidate/vuelidate
 import { validationMixin } from 'vuelidate'
-import { required, minLength } from 'vuelidate/lib/validators'
+import { required, minLength,maxLength,alphaNum } from 'vuelidate/lib/validators'
+import {mapActions} from 'vuex';
 
 export default {
   mixins: [validationMixin],
@@ -83,11 +84,14 @@ export default {
     form: {
       username: {
         required,
-        minLength: minLength(3)
+        minLength: minLength(6),
+        maxLength: maxLength(20),
+        alphaNum
       },
       password: {
         required,
-        minLength: minLength(5)
+        minLength: minLength(5),
+        maxLength: maxLength(20)
       }
     }
   },
@@ -96,12 +100,22 @@ export default {
       this.$v.form.$touch()
 
       if (this.$v.form.$anyError) {
-        return
+        return 
       }
+      // console.log(this.$v.form);
+      const {username, password} = this.$v.form
 
       // Form submit logic
-      this.$router.push('/backend')
-    }
-  }
+      this.signIn({username: username.$model, password: password.$model})  
+
+
+      
+    },
+    ...mapActions("authentication",{
+      signIn : "signIn"
+    })
+
+  },
+  
 }
 </script>

@@ -11,13 +11,11 @@
             @click="showCreateUser"
             ><i class="si si-plus pr-2"></i>New user</b-button
           >
-          <!-- <button type="button" class="btn-block-option">
-            <i class="si si-settings"></i>
-          </button> -->
         </template>
         <b-table
-        striped
-        bordered
+          responsive
+          striped
+          bordered
           hover
           :fields="fields"
           :per-page="perPage"
@@ -30,6 +28,7 @@
               variant="alt-primary"
               v-b-modal.modal-edit-user
               @click="showEditUser(user.item)"
+              :disabled="!!user.item.deleted_at"
             >
               <i class="fa fa-fw fa-pencil-alt"></i>
             </b-button>
@@ -38,83 +37,19 @@
               variant="alt-danger"
               v-b-modal.modal-delete-user
               @click="showDeleteUser(user.item)"
+              :disabled="!!user.item.deleted_at"
             >
               <i class="fa fa-fw fa-times"></i>
             </b-button>
           </template>
         </b-table>
-        <!-- <b-table-simple
-
-          :per-page="perPage"
-          :current-page="currentPage"
-          :items="users"
-          responsive
-          bordered
-          striped
-          table-class="table-vcenter"
-        >
-          <b-thead>
-            <b-tr>
-              <b-th class="text-center" style="width: 100px">
-                <i class="far fa-user"></i>
-              </b-th>
-              <b-th>Name</b-th>
-              <b-th style="width: 30%">Created At</b-th>
-              <b-th style="width: 15%">Access</b-th>
-              <b-th class="text-center" style="min-width: 110px; width: 110px"
-                >Actions</b-th
-              >
-            </b-tr>
-          </b-thead>
-          <b-tbody>
-            <b-tr v-for="user in users" :key="user.id">
-              <b-td class="text-center">
-                <img
-                  class="img-avatar img-avatar48"
-                  :src="`img/avatars/${user.avatar}.jpg`"
-                  alt="Avatar"
-                />
-              </b-td>
-              <b-td class="font-w600 font-size-sm">
-                <a :href="`${user.href}`">
-                  {{ user.username }}
-                </a>
-              </b-td>
-              <b-td class="font-size-sm">
-                client{{ user.id }}<em class="text-muted">@example.com</em>
-              </b-td>
-              <b-td>
-                <b-badge :variant="user.labelVariant">{{
-                  user.labelText
-                }}</b-badge>
-              </b-td>
-              <b-td class="text-center">
-                <b-button
-                  size="sm"
-                  variant="alt-primary"
-                  v-b-modal.modal-edit-user
-                  @click="showEditUser(user)"
-                >
-                  <i class="fa fa-fw fa-pencil-alt"></i>
-                </b-button>
-                <b-button
-                  size="sm"
-                  variant="alt-danger"
-                  v-b-modal.modal-delete-user
-                  @click="showDeleteUser(user)"
-                >
-                  <i class="fa fa-fw fa-times"></i>
-                </b-button>
-              </b-td>
-            </b-tr>
-          </b-tbody>
-        </b-table-simple> -->
         <b-pagination
           v-model="currentPage"
           :total-rows="rows"
           :per-page="perPage"
         ></b-pagination>
       </base-block>
+      <!-- Delete Modal Start -->
       <b-modal
         id="modal-delete-user"
         size="md"
@@ -137,7 +72,9 @@
               </div>
               <div class="col-auto px-2">
                 <!-- Payments -->
-                <b-button variant="light" @click="deleteUserConfirm"
+                <b-button
+                  variant="light"
+                  @click="$bvModal.hide('modal-delete-user')"
                   >Từ chối</b-button
                 >
                 <!-- END Payments -->
@@ -146,6 +83,8 @@
           </div>
         </div>
       </b-modal>
+      <!-- Delete Modal End -->
+
       <b-modal
         id="modal-edit-user"
         size="md"
@@ -164,7 +103,7 @@
                 <b-form-group label="Username" label-for="block-form5-username">
                   <b-form-input
                     readonly
-                    class="form-control-alt"
+                    :class="stateUsername"
                     :value="currentSelectedUser"
                   ></b-form-input>
                 </b-form-group>
@@ -178,7 +117,7 @@
                   <b-form-input
                     v-else
                     type="password"
-                    class="form-control-alt"
+                    :class="statePassword"
                     v-model="form.password"
                   ></b-form-input>
                 </b-form-group>
@@ -191,9 +130,7 @@
               </div>
               <div class="col-auto px-2">
                 <!-- Sales -->
-                <b-button @click="editUserConfirm" variant="success"
-                  >Lưu</b-button
-                >
+                <b-button @click="handleOkEdit" variant="success">Lưu</b-button>
                 <!-- END Sales -->
               </div>
               <div class="col-auto px-2">
@@ -225,13 +162,13 @@
               <div class="col-12 px-2">
                 <b-form-group label="Username" label-for="block-form5-username">
                   <b-form-input
-                    class="form-control-alt"
+                    :class="stateUsername"
                     v-model="form.username"
                   ></b-form-input>
                 </b-form-group>
                 <b-form-group label="Password" label-for="block-form5-password">
                   <b-form-input
-                    class="form-control-alt"
+                    :class="statePassword"
                     type="password"
                     v-model="form.password"
                   ></b-form-input>
@@ -245,9 +182,7 @@
               </div>
               <div class="col-auto px-2">
                 <!-- Sales -->
-                <b-button @click="createUserConfirm" variant="success"
-                  >Lưu</b-button
-                >
+                <b-button @click="handleOk" variant="success">Lưu</b-button>
                 <!-- END Sales -->
               </div>
               <div class="col-auto px-2">
@@ -269,12 +204,15 @@
 </template>
 
 <script>
+import { mapActions, mapState } from "vuex";
+// import { validationMixin } from 'vuelidate'
+// import { required, minLength,maxLength,alphaNum } from 'vuelidate/lib/validators'
 export default {
   data() {
     return {
-      fields: ["username", "role", "created at", "actions"],
+      fields: ["username", "role", "created_at", "deleted_at", "actions"],
       currentSelectedUser: -1,
-      form: {},
+      form: { username: "", password: "", role: "user" },
       currentPage: 1,
       perPage: 5,
       shouldShowPasswordInput: false,
@@ -282,99 +220,147 @@ export default {
         { value: "user", text: "User" },
         { value: "admin", text: "Admin" },
       ],
-      users: [
-        {
-          id: 1,
-          username: "Adam McCoy",
-          avatar: "avatar10",
-          href: "javascript:void(0)",
-          labelVariant: "success",
-          labelText: "VIP",
-          actions: null,
-        },
-        {
-          id: 2,
-          username: "Betty Kelley",
-          avatar: "avatar2",
-          href: "javascript:void(0)",
-          labelVariant: "info",
-          labelText: "Business",
-          actions: null,
-        },
-        {
-          id: 3,
-          username: "Jesse Fisher",
-          avatar: "avatar9",
-          href: "javascript:void(0)",
-          labelVariant: "primary",
-          labelText: "Personal",
-        },
-        {
-          id: 4,
-          username: "Ryan Flores",
-          avatar: "avatar12",
-          href: "javascript:void(0)",
-          labelVariant: "warning",
-          labelText: "Trial",
-        },
-        {
-          id: 5,
-          username: "Alice Moore",
-          avatar: "avatar4",
-          href: "javascript:void(0)",
-          labelVariant: "danger",
-          labelText: "Disabled",
-        },
-        {
-          id: 6,
-          username: "Alice Moore",
-          avatar: "avatar4",
-          href: "javascript:void(0)",
-          labelVariant: "danger",
-          labelText: "Disabled",
-        },
-        {
-          id: 7,
-          username: "Alice Moore",
-          avatar: "avatar4",
-          href: "javascript:void(0)",
-          labelVariant: "danger",
-          labelText: "Disabled",
-        },
-      ],
     };
   },
-      computed: {
-      rows() {
-        return this.users.length
+  computed: {
+    stateUsername() {
+      if (this.form.username.length === 0) return "form-control-alt";
+      if (
+        this.form.username.length < 6 ||
+        this.form.username.length > 20 ||
+        this.alphanumeric(this.form.username) === false
+      ) {
+        return {
+          dirty: false,
+          error: true,
+        };
+      } else {
+        return {
+          dirty: true,
+          error: false,
+        };
       }
     },
+    statePassword() {
+      if (this.form.password.length === 0) return "form-control-alt";
+      if (this.form.password.length >= 6 && this.form.password.length <= 20) {
+        return {
+          dirty: true,
+          error: false,
+        };
+      } else {
+        return {
+          dirty: false,
+          error: true,
+        };
+      }
+    },
+    rows() {
+      return this.users.length;
+    },
+    ...mapState("users", {
+      users: "users",
+    }),
+  },
+  created() {
+    this.fetchUsers();
+  },
   methods: {
+    alphanumeric(inputtxt) {
+      var letters = /^[0-9a-zA-Z]+$/;
+      if (inputtxt.match(letters)) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    handleOkEdit() {
+      if (
+        this.statePassword.error === true ||
+        this.statePassword === "form-control-alt"
+      ) {
+        return;
+      } else {
+        this.editUserConfirm();
+      }
+    },
+    handleOk() {
+      if (
+        this.stateUsername.error === true ||
+        this.statePassword.error === true ||
+        this.stateUsername === "form-control-alt" ||
+        this.statePassword === "form-control-alt"
+      ) {
+        return;
+      } else {
+        this.createUserConfirm();
+      }
+    },
     showDeleteUser(user) {
+      if (user.deleted_at) return;
       this.currentSelectedUser = user.username;
       console.log(this.currentSelectedUser);
       // code
     },
     deleteUserConfirm() {
+      const username = this.currentSelectedUser;
+      this.deleteUser(username);
       this.$bvModal.hide("modal-delete-user");
-      this.currentSelectedUser = -1;
-      console.log(this.currentSelectedUser);
     },
     showEditUser(user) {
-      console.log(user);
+      if (user.deleted_at) this.form = {};
+      this.form.role = user.role;
       this.currentSelectedUser = user.username;
       //code
     },
     editUserConfirm() {
+      const username = this.currentSelectedUser;
+      this.updateUser({ username, data: this.form });
       this.$bvModal.hide("modal-edit-user");
     },
     showCreateUser() {
       this.$bvModal.show("modal-create-user");
-      this.form = {};
+      this.form = { username: "", password: "", role: "user" };
+      // this.form = {
+      //   role: "user",
+      // };
     },
     createUserConfirm() {
       this.$bvModal.hide("modal-create-user");
+      const { username, password, role } = this.form;
+      this.createUser({ username, password, role });
     },
+    ...mapActions("users", {
+      fetchUsers: "fetchUsers",
+      createUser: "createUser",
+      deleteUser: "deleteUser",
+      updateUser: "updateUser",
+    }),
   },
 };
 </script>
+<style>
+b-form-input {
+  border: 1px solid silver;
+  border-radius: 4px;
+  background: white;
+  padding: 5px 10px;
+}
+.dirty {
+  border-color: #5A5;
+  background: #EFE;
+}
+.dirty:focus {
+  border-color: #5A5;
+  background: #EFE;
+}
+
+.error {
+  border-color: red;
+  background: #FDD;
+}
+.error:focus {
+  border-color: red;
+  background: #FDD;
+}
+</style>

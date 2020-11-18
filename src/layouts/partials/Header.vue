@@ -110,7 +110,7 @@
           <b-dropdown size="sm" variant="dual" class="d-inline-block ml-2" menu-class="p-0 border-0 font-size-sm" right no-caret>
             <template #button-content>
               <img class="rounded" src="img/avatars/avatar10.jpg" alt="Header Avatar" style="width: 18px;">
-              <span class="d-none d-sm-inline-block ml-1">Adam</span>
+              <span class="d-none d-sm-inline-block ml-1">{{currentUser.username}}</span>
               <i class="fa fa-fw fa-angle-down d-none d-sm-inline-block"></i>
             </template>
             <li>
@@ -118,8 +118,8 @@
                 <img class="img-avatar img-avatar48 img-avatar-thumb" src="img/avatars/avatar10.jpg" alt="Avatar">
               </div>
               <div class="p-2">
-                <h5 class="dropdown-header text-uppercase">User Options</h5>
-                <a class="dropdown-item d-flex align-items-center justify-content-between" href="javascript:void(0)">
+                <!-- <h5 class="dropdown-header text-uppercase">User Options</h5> -->
+                <!-- <a class="dropdown-item d-flex align-items-center justify-content-between" href="javascript:void(0)">
                   <span>Inbox</span>
                   <span>
                     <span class="badge badge-pill badge-primary">3</span>
@@ -132,21 +132,21 @@
                     <span class="badge badge-pill badge-success">1</span>
                     <i class="si si-user ml-1"></i>
                   </span>
-                </router-link>
+                </router-link> -->
                 <a class="dropdown-item d-flex align-items-center justify-content-between" href="javascript:void(0)">
                   <span>Settings</span>
                   <i class="si si-settings"></i>
                 </a>
                 <div role="separator" class="dropdown-divider"></div>
-                <h5 class="dropdown-header text-uppercase">Actions</h5>
+                <!-- <h5 class="dropdown-header text-uppercase">Actions</h5>
                 <router-link class="dropdown-item d-flex align-items-center justify-content-between" to="/auth/lock">
                   <span>Lock Account</span>
                   <i class="si si-lock ml-1"></i>
-                </router-link>
-                <router-link class="dropdown-item d-flex align-items-center justify-content-between" to="/auth/signin">
+                </router-link> -->
+                <a class="dropdown-item d-flex align-items-center justify-content-between" @click="clickLogOut">
                   <span>Log Out</span>
                   <i class="si si-logout ml-1"></i>
-                </router-link>
+                </a>
               </div>
             </li>
           </b-dropdown>
@@ -233,6 +233,7 @@
 </template>
 
 <script>
+import { mapActions, mapState} from 'vuex';
 export default {
   name: 'BaseHeader',
   props: {
@@ -281,6 +282,9 @@ export default {
       ]
     }
   },
+  computed:{
+    ...mapState("authentication",{"currentUser":"currentUser"})
+  },
   methods: {
     onSubmit () {
       this.$router.push('/backend/pages/generic/search?' + this.baseSearchTerm)
@@ -291,13 +295,21 @@ export default {
         event.preventDefault()
         this.$store.commit('headerSearch', { mode: 'off' })
       }
-    }
+    },
+    async clickLogOut(){
+      await this.logOut();
+      this.$router.push({name :"signIn"})
+      
+    },
+    ...mapActions("authentication",{
+      logOut : "logOut"
+    })
   },
   mounted () {
     document.addEventListener('keydown', this.eventHeaderSearch)
   },
   destroyed () {
     document.removeEventListener('keydown', this.eventHeaderSearch)
-  }
+  },
 }
 </script>

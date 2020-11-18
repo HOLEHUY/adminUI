@@ -28,6 +28,16 @@ export default {
       to: "/backend/tables/product"
     },
     {
+      name: "Gallery",
+      heading: true
+    },
+    {
+      name: "Media",
+      icon: "si si-picture",
+      to: "/backend/plugins/gallery"
+    },
+    
+    {
       name: "Pages",
       heading: true
     },
